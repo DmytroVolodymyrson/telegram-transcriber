@@ -1,0 +1,150 @@
+{
+  "name": "Telegram Voice Transcriber",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "id": "trigger",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [0, 304]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "voice-check",
+              "leftValue": "={{ $json.message.voice }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "switch",
+      "name": "Is Voice Message",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [224, 304]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "id": "getfile",
+      "name": "Download Voice File",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [448, 208]
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "id": "transcribe",
+      "name": "Transcribe Recording",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [672, 208]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {}
+      },
+      "id": "send-transcription",
+      "name": "Send Transcription",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [880, 208]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Please send me a voice message and I'll transcribe it for you!",
+        "additionalFields": {}
+      },
+      "id": "send-instructions",
+      "name": "Send Instructions",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [448, 400]
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Is Voice Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Voice Message": {
+      "main": [
+        [
+          {
+            "node": "Download Voice File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Instructions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Voice File": {
+      "main": [
+        [
+          {
+            "node": "Transcribe Recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe Recording": {
+      "main": [
+        [
+          {
+            "node": "Send Transcription",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

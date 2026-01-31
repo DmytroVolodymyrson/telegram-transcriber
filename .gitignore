@@ -1,0 +1,13 @@
+# macOS
+.DS_Store
+
+# Environment files
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+
+# Credentials (never commit these)
+*.credentials.json
